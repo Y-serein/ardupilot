@@ -636,6 +636,9 @@ void Copter::three_hz_loop()
 
     // check if avoidance should be enabled based on alt
     low_alt_avoidance();
+
+    /*====================================================*/
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "Current altitude: %.1fm", copter.flightmode->get_alt_above_ground_cm() / 100.0f);
 }
 
 // one_hz_loop - runs at 1Hz
