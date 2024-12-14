@@ -641,6 +641,8 @@ void Copter::three_hz_loop()
 // one_hz_loop - runs at 1Hz
 void Copter::one_hz_loop()
 {
+      
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "Current altitude: %d", int(g2.star_ys_cm));
 #if HAL_LOGGING_ENABLED
     if (should_log(MASK_LOG_ANY)) {
         Log_Write_Data(LogDataID::AP_STATE, ap.value);
@@ -679,6 +681,7 @@ void Copter::one_hz_loop()
 #if AC_CUSTOMCONTROL_MULTI_ENABLED == ENABLED
     custom_control.set_notch_sample_rate(AP::scheduler().get_filtered_loop_rate_hz());
 #endif
+
 }
 
 void Copter::init_simple_bearing()

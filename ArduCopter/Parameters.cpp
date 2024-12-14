@@ -1251,6 +1251,7 @@ const AP_Param::GroupInfo ParametersG2::var_info2[] = {
 
     // ID 62 is reserved for the AP_SUBGROUPEXTENSION
     AP_GROUPINFO("STAR_R_CM", 10, ParametersG2, star_radius_cm, 1000.0f),
+    AP_GROUPINFO("STAR_YS_CM", 12, ParametersG2, star_ys_cm, 1000.0f),
 
     AP_GROUPEND
 };
