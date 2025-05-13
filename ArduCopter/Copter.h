@@ -233,6 +233,7 @@ public:
     friend class PayloadPlace;
 
     friend class ModeDrawStar;
+    friend class ModeOpenmvRTL;
     Copter(void);
 
 private:
@@ -1056,6 +1057,9 @@ private:
 #endif
 #if MODE_DRAWSTAR_ENABLED == ENABLED
     ModeDrawStar mode_DrawStar;
+#endif
+#if MODE_OPENMVRTL_ENABLED == ENABLED
+    ModeOpenmvRTL mode_OpenmvRTL;
 #endif
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);

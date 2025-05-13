@@ -1,6 +1,6 @@
 #include "Copter.h"
 #include "Parameters.h"
-#if MODE_DRAWSTAR_ENABLED == ENABLED
+#if MODE_OPENMVRTL_ENABLED == ENABLED
 
 /*
  * Init and run calls for guided flight mode
@@ -24,21 +24,21 @@
 // } static guided_angle_state;
 
 // init - initialise guided controller
-bool ModeDrawStar::init(bool ignore_checks)
+bool ModeOpenmvRTL::init(bool ignore_checks)
 {
-    gcs().send_text(MAV_SEVERITY_INFO, "-----------------------------------------------");
+    gcs().send_text(MAV_SEVERITY_INFO, "OPENMV_RTL START");
     // start in velaccel control mode
     path_num_ys = 0;  // 航点号清零，从而切到其他模式再切回来后，可以飞出一个新的五角星航线
     generate_path();
     pos_control_start();
-    gcs().send_text(MAV_SEVERITY_INFO, "==============================================");
     return true;
 }
 
-void ModeDrawStar::generate_path()
+void ModeOpenmvRTL::generate_path()
 {
     float radius_cm = g2.star_radius_cm;
 
+    
     wp_nav->get_wp_stopping_point(path_ys[0]);
 
     path_ys[1] = path_ys[0] + Vector3f(1.0f, 0, 0) * radius_cm;
@@ -51,7 +51,7 @@ void ModeDrawStar::generate_path()
 }
 
 // initialise guided mode's position controller
-void ModeDrawStar::pos_control_start()
+void ModeOpenmvRTL::pos_control_start()
 {
     // initialise position controller
     wp_nav->wp_and_spline_init();
@@ -64,7 +64,7 @@ void ModeDrawStar::pos_control_start()
     gcs().send_text(MAV_SEVERITY_CRITICAL, "pos_control_start: %d\r\n", path_num_ys);
 }
 
-void ModeDrawStar::run()
+void ModeOpenmvRTL::run()
 {
     gcs().send_text(MAV_SEVERITY_CRITICAL, "Current altitude: %d", path_num_ys);
     if (path_num_ys < 6) {  // 五角星航线尚未走完
@@ -81,13 +81,13 @@ void ModeDrawStar::run()
 }
 
 // return guided mode timeout in milliseconds. Only used for velocity, acceleration, angle control, and angular rates
-uint32_t ModeDrawStar::get_timeout_ms() const
+uint32_t ModeOpenmvRTL::get_timeout_ms() const
 {
     return MAX(copter.g2.guided_timeout, 0.1) * 1000;
 }
 
 /*
-void ModeDrawStar::pos_control_run()
+void ModeOpenmvRTL::pos_control_run()
 {
    
     float target_yaw_rate = 0;
@@ -141,8 +141,11 @@ void ModeDrawStar::pos_control_run()
     attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading());
 }
 */
- 
-void ModeDrawStar::pos_control_run()
+/*
+    鉴于上述背景问题，本研究致力于设计基于AIoT的四周驱动控制系统与，提升其在复杂环境下
+    多旋翼无人机在未知的复杂环境中存在着以下四个理论层面的挑战：
+*/
+void ModeOpenmvRTL::pos_control_run()
 {
     // process pilot's yaw input
     float target_yaw_rate = 0;

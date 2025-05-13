@@ -642,7 +642,7 @@ void Copter::three_hz_loop()
 void Copter::one_hz_loop()
 {
       
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "Current altitude: %d", int(g2.star_ys_cm));
+    //gcs().send_text(MAV_SEVERITY_CRITICAL, "Current altitude: %d", int(g2.star_ys_cm));
 #if HAL_LOGGING_ENABLED
     if (should_log(MASK_LOG_ANY)) {
         Log_Write_Data(LogDataID::AP_STATE, ap.value);

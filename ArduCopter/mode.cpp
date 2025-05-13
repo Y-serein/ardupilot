@@ -184,6 +184,12 @@ Mode *Copter::mode_from_mode_num(const Mode::Number mode)
             ret = &mode_DrawStar;
             break;
 #endif
+
+#if MODE_OPENMVRTL_ENABLED == ENABLED
+        case Mode::Number::OPENMV_RTL:
+            ret = &mode_OpenmvRTL;
+            break;
+#endif
         default:
             break;
     }

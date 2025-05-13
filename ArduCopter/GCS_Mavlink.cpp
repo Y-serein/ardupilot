@@ -50,6 +50,7 @@ MAV_MODE GCS_MAVLINK_Copter::base_mode() const
     case Mode::Number::BRAKE:
     case Mode::Number::SMART_RTL:
     case Mode::Number::DRAWSTAR:
+    case Mode::Number::OPENMV_RTL:
         _base_mode |= MAV_MODE_FLAG_GUIDED_ENABLED;
         // note that MAV_MODE_FLAG_AUTO_ENABLED does not match what
         // APM does in any mode, as that is defined as "system finds its own goal
