@@ -72,6 +72,7 @@
 #include <AC_PrecLand/AC_PrecLand_config.h>
 #include <AP_OpticalFlow/AP_OpticalFlow.h>
 #include <AP_Winch/AP_Winch_config.h>
+#include <AP_OpenMV/AP_OpenMV.h>
 
 // Configuration
 #include "defines.h"
@@ -258,6 +259,7 @@ private:
     AP_Logger logger;
 #endif
 
+    AP_OpenMV openmv{};
     // flight modes convenience array
     AP_Int8 *flight_modes;
     const uint8_t num_flight_modes = 6;
@@ -709,6 +711,7 @@ private:
     void rc_loop();
     void throttle_loop();
     void update_batt_compass(void);
+    void update_OpenMV(void);
     void loop_rate_logging();
     void ten_hz_logging_loop();
     void twentyfive_hz_logging();

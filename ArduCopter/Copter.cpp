@@ -197,6 +197,7 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(loop_rate_logging, LOOP_RATE,    50,  75),
 #endif
     SCHED_TASK(one_hz_loop,            1,    100,  81),
+    SCHED_TASK(update_OpenMV,        400,    100,  83),
     SCHED_TASK(ekf_check,             10,     75,  84),
     SCHED_TASK(check_vibration,       10,     50,  87),
     SCHED_TASK(gpsglitch_check,       10,     50,  90),
@@ -682,6 +683,12 @@ void Copter::one_hz_loop()
     custom_control.set_notch_sample_rate(AP::scheduler().get_filtered_loop_rate_hz());
 #endif
 
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "OpenMV X:%d Y:%d", openmv.cx, openmv.cy);
+}
+
+void Copter::update_OpenMV(void)
+{
+    openmv.updata();
 }
 
 void Copter::init_simple_bearing()
