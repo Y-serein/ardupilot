@@ -683,7 +683,7 @@ void Copter::one_hz_loop()
     custom_control.set_notch_sample_rate(AP::scheduler().get_filtered_loop_rate_hz());
 #endif
 
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "OpenMV X:%d Y:%d", openmv.cx, openmv.cy);
+if(openmv.cx!=0)    gcs().send_text(MAV_SEVERITY_CRITICAL, "OpenMV X:%d Y:%d", openmv.cx, openmv.cy);
 }
 
 void Copter::update_OpenMV(void)
