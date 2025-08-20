@@ -8,13 +8,13 @@
 
 // default rate controller PID gains
 #ifndef AC_ATC_MULTI_RATE_RP_P
-  # define AC_ATC_MULTI_RATE_RP_P           0.065f
+  # define AC_ATC_MULTI_RATE_RP_P           0.135f
 #endif
 #ifndef AC_ATC_MULTI_RATE_RP_I
-  # define AC_ATC_MULTI_RATE_RP_I           0.010f
+  # define AC_ATC_MULTI_RATE_RP_I           0.135f
 #endif
 #ifndef AC_ATC_MULTI_RATE_RP_D
-  # define AC_ATC_MULTI_RATE_RP_D           0.001f
+  # define AC_ATC_MULTI_RATE_RP_D           0.0036f
 #endif
 #ifndef AC_ATC_MULTI_RATE_RP_IMAX
  # define AC_ATC_MULTI_RATE_RP_IMAX         0.5f

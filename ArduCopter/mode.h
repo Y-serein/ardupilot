@@ -96,7 +96,7 @@ public:
         AUTO_RTL =     27,  // Auto RTL, this is not a true mode, AUTO will report as this mode if entered to perform a DO_LAND_START Landing sequence
         TURTLE =       28,  // Flip over after crash
         DRAWSTAR = 29,
-        OPENMV_RTL = 128,
+        OPENMV_RTL = 33,
         // Mode number 127 reserved for the "drone show mode" in the Skybrush
         // fork at https://github.com/skybrush-io/ardupilot
     };
@@ -1197,20 +1197,19 @@ class ModeOpenmvRTL : public Mode {
         bool has_manual_throttle() const override { return false; }  // 此模式不允许手动控制油门
         bool in_guided_mode() const override { return true; }  // 此模式是一种引导的模式
         //bool allows_arming(AP_Arming::Method method) const override;
-        //bool allows_arming(bool from_gcs) const override { return false; }  // 不允许在此模式下解锁
-        bool allows_arming(AP_Arming::Method method) const override { return false; };
+        //bool allows_arming(bool from_gcs) const override { return false; }  
+        bool allows_arming(AP_Arming::Method method) const override { return false; };// 不允许在此模式下解锁,等同于上面两行
         bool is_autopilot() const override { return true; }  // 此模式为自动飞行控制
         bool has_user_takeoff(bool must_navigate) const override { return false; }  // 不允许在此模式下直接起飞（必须是在空中切到此模式）
         uint32_t get_timeout_ms() const;
     protected:
     
-        const char *name() const override { return "DRAW_STAR"; }
-        const char *name4() const override { return "STAR"; }
+        const char *name() const override { return "OPENMV_RTL"; }
+        const char *name4() const override { return "OPENMV"; }
     
     private:
         Vector3f path_ys[10];  // 航点数组
-        int openmv_rtl_cm;  // 当前航点号
-        int path_num_ys;  // 当前航点号 
+        int8_t temp_x =0, temp_y = 0;
 
         void generate_path();  // 生成航线
         void pos_control_start();  // 开始位置控制

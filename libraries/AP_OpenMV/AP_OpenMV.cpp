@@ -1,24 +1,24 @@
-/*
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
+/************************************************************ 
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+Copyright (C), 1988 - 1999, Guangzhou zhier Creative Technology Co., Ltd. 
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+FileName: AP_OpenMV.cpp
 
-/* 
-   Graupner Hott Telemetry library
-   Hott telemetry runs at 19200 8N1 on a non-inverted half-duplex UART
+Author:Serein_Y    Version:1.0.0    Date:2025.07.06
 
-   With thanks to Graupner and betaflight
-*/
+Description: Userd for communicating with the BMS and obtaining battery voltage and current data
+
+Version: implement serial communication
+
+Function List: 
+
+    1.init(): Function initialization function
+
+History: 
+
+Serein_Y 25/05/28 0.1.0 build this module
+
+***********************************************************/ 
 
 #define AP_SERIALMANAGER_OPENMV_BUAD                 57600
 #define AP_SERIALMANAGER_OPENMV_BUFSIZE_RX              64
@@ -46,6 +46,29 @@ void AP_OpenMV::init()
    }
 }
 
+/************************************************* 
+
+Function: 
+
+Description: 
+
+Calls: 
+
+Called By: 
+
+Table Accessed: 
+
+Table Updated: 
+
+Input: 
+
+Output: 
+
+Return: 
+
+Others: 
+
+*************************************************/
 void AP_OpenMV::updata()
 {
    /*接口是否存在*/
@@ -94,9 +117,9 @@ void AP_OpenMV::updata()
       }
    }
 }
-
+/*
 namespace AP {
     AP_OpenMV *OpenMV() {
         return AP_OpenMV::get_singleton();
     }
-};
+};*/

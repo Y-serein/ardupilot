@@ -1,7 +1,11 @@
 #include "Copter.h"
 #include "Parameters.h"
+#include <AP_OpenMV/AP_OpenMV.h>
+#include "RC_Channel.h"
+
 #if MODE_OPENMVRTL_ENABLED == ENABLED
 
+AP_OpenMV openmv{};
 /*
  * Init and run calls for guided flight mode
  */
@@ -27,26 +31,22 @@
 bool ModeOpenmvRTL::init(bool ignore_checks)
 {
     gcs().send_text(MAV_SEVERITY_INFO, "OPENMV_RTL START");
+    temp_x = 2;
+    temp_y = 2;
     // start in velaccel control mode
-    path_num_ys = 0;  // 航点号清零，从而切到其他模式再切回来后，可以飞出一个新的五角星航线
     generate_path();
     pos_control_start();
+
+    rc().init();
+
     return true;
 }
 
 void ModeOpenmvRTL::generate_path()
 {
-    float radius_cm = g2.star_radius_cm;
+    // float radius_cm = g2.openmv_rtl_cm;
 
-    
     wp_nav->get_wp_stopping_point(path_ys[0]);
-
-    path_ys[1] = path_ys[0] + Vector3f(1.0f, 0, 0) * radius_cm;
-    path_ys[2] = path_ys[0] + Vector3f(-cosf(radians(36.0f)), -sinf(radians(36.0f)), 0) * radius_cm;
-    path_ys[3] = path_ys[0] + Vector3f(sinf(radians(18.0f)), cosf(radians(18.0f)), 0) * radius_cm;
-    path_ys[4] = path_ys[0] + Vector3f(sinf(radians(18.0f)), -cosf(radians(18.0f)), 0) * radius_cm;
-    path_ys[5] = path_ys[0] + Vector3f(-cosf(radians(36.0f)), sinf(radians(36.0f)), 0) * radius_cm;
-    path_ys[6] = path_ys[1];
 
 }
 
@@ -59,25 +59,58 @@ void ModeOpenmvRTL::pos_control_start()
     // initialise wpnav to stopping point
     wp_nav->set_wp_destination(path_ys[0], false);
 
+    // 保持当前的偏航角或PID参数
     auto_yaw.set_mode_to_default(false);
 
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "pos_control_start: %d\r\n", path_num_ys);
+    gcs().send_text(MAV_SEVERITY_INFO, "pos_control_start: x=%.2f y=%.2f z=%.2f\r\n", 
+                    path_ys[0].x, path_ys[0].y, path_ys[0].z);
 }
 
 void ModeOpenmvRTL::run()
 {
-    gcs().send_text(MAV_SEVERITY_CRITICAL, "Current altitude: %d", path_num_ys);
-    if (path_num_ys < 6) {  // 五角星航线尚未走完
-        if (wp_nav->reached_wp_destination()) {  // 到达某个端点    //wap_nav 航点导航点
-            path_num_ys++;
-            wp_nav->set_wp_destination(path_ys[path_num_ys], false);  // 将下一个航点位置设置为导航控制模块的目标位置
-            gcs().send_text(MAV_SEVERITY_INFO, "now go into loiter mode");
-        }
-    } else if ((path_num_ys == 6) && wp_nav->reached_wp_destination()) {  // 五角星航线运行完成，自动进入Loiter模式
+    if ((temp_x == 0) && (temp_y == 0))
+    {
         gcs().send_text(MAV_SEVERITY_INFO, "Draw star finished, now go into loiter mode");
-        copter.set_mode(Mode::Number::LOITER, ModeReason::MISSION_END);  // 切换到loiter模式
+        copter.set_mode(Mode::Number::LOITER, ModeReason::MISSION_END);  // 切换到loiter模式,MISSION_END为切换原因：任务结束自动切换
     }
+    else if (wp_nav->reached_wp_destination())                          // 到达某个端点    //wap_nav 航点导航点
+    {
+        hal.scheduler->delay(1000);
+        rc().read_input();
+        // gcs().send_text(MAV_SEVERITY_INFO, "temp_x: x=%d\r\n", (int)rc().channel(7)->get_radio_in());
+        // gcs().send_text(MAV_SEVERITY_INFO, "temp_y: x=%d\r\n", (int)rc().channel(5)->get_radio_in());
+        if ((int)rc().channel(7)->get_radio_in() >= 1750)
+        {
+            temp_x -= 1.0;
+        }
+        else if ((int)rc().channel(7)->get_radio_in() <= 1250)
+        {
+            temp_x += 1.0;
+        }
+        if ((int)rc().channel(5)->get_radio_in() >= 1750)
+        {
+
+            temp_y -= 1.0;
+        }
+        else if ((int)rc().channel(5)->get_radio_in() <= 1250)
+        {
+            temp_y += 1.0;
+        }
+        gcs().send_text(MAV_SEVERITY_INFO, "temp_x=%d temp_y=%d\r\n", temp_x, temp_y);
+            
+        // path_ys[4] = path_ys[0] + Vector3f(sinf(radians(18.0f)), -cosf(radians(18.0f)), 0) * radius_cm;
+        path_ys[1] = path_ys[0] + Vector3f(double(temp_x), double(temp_y), 0);
+
+        gcs().send_text(MAV_SEVERITY_INFO, "pos_control_state: x=%f y=%f z=%f\r\n", path_ys[0].x, path_ys[0].y, path_ys[0].z);
+
+        wp_nav->set_wp_destination(path_ys[1], false);  // 将下一个航点位置设置为导航控制模块的目标位置
+    }
+
     pos_control_run();
+    
+    path_ys[0] = path_ys[1];
+
+
 }
 
 // return guided mode timeout in milliseconds. Only used for velocity, acceleration, angle control, and angular rates
@@ -86,65 +119,6 @@ uint32_t ModeOpenmvRTL::get_timeout_ms() const
     return MAX(copter.g2.guided_timeout, 0.1) * 1000;
 }
 
-/*
-void ModeOpenmvRTL::pos_control_run()
-{
-   
-    float target_yaw_rate = 0;
-    if (!copter.failsafe.radio && use_pilot_yaw()) {
-        // get pilot's desired yaw rate
-        target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->norm_input_dz());
-        if (!is_zero(target_yaw_rate)) {
-            auto_yaw.set_mode(AutoYaw::Mode::HOLD);
-        }
-    }
-
-    // if not armed set throttle to zero and exit immediately
-    if (is_disarmed_or_landed()) {
-        // do not spool down tradheli when on the ground with motor interlock enabled
-        make_safe_ground_handling(copter.is_tradheli() && motors->get_interlock());
-        return;
-    }
-
-    // calculate terrain adjustments
-    float terr_offset = 0.0f;
-    if (guided_pos_terrain_alt_ys && !wp_nav->get_terrain_offset(terr_offset)) {
-        // failure to set destination can only be because of missing terraFpos_control->input_pos_xyz(guided_pos_target_cm, terr_offset, pos_offset_z_buffer);in data
-        copter.failsafe_terrain_on_event();
-        return;
-    }
-
-    // set motors to full range
-    motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
-
-    // send position and velocity targets to position controller
-    guided_accel_target_cmss.zero();
-    guided_vel_target_cms.zero();
- 
-    // stop rotating if no updates received within timeout_ms
-    if (millis() - update_time_ms > get_timeout_ms()) {
-        if ((auto_yaw.mode() == AutoYaw::Mode::RATE) || (auto_yaw.mode() == AutoYaw::Mode::ANGLE_RATE)) {
-            auto_yaw.set_mode(AutoYaw::Mode::HOLD);
-        }
-    }
-
-    float pos_offset_z_buffer = 0.0; // Vertical buffer size in m
-    if (guided_pos_terrain_alt_ys) {
-        pos_offset_z_buffer = MIN(copter.wp_nav->get_terrain_margin() * 100.0, 0.5 * fabsF(guided_pos_target_cm.z));
-    }
-    pos_control->input_pos_xyz(guided_pos_target_cm, terr_offset, pos_offset_z_buffer);
-
-    // run position controllers
-    pos_control->update_xy_controller();
-    pos_control->update_z_controller();
-    // call attitude controller with auto yaw
-    attitude_control->input_thrust_vector_heading(pos_control->get_thrust_vector(), auto_yaw.get_heading());
-}
-*/
-/*
-    鉴于上述背景问题，本研究致力于设计基于AIoT的四周驱动控制系统与，提升其在复杂环境下
-    多旋翼无人机在未知的复杂环境中存在着以下四个理论层面的挑战：
-*/
 void ModeOpenmvRTL::pos_control_run()
 {
     // process pilot's yaw input
