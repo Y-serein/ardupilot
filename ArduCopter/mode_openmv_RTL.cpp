@@ -1,7 +1,6 @@
 #include "Copter.h"
 #include "Parameters.h"
-#include <AP_OpenMV/AP_OpenMV.h>
-#include "RC_Channel.h"
+#include <AP_HAL/Semaphores.h>
 
 #if MODE_OPENMVRTL_ENABLED == ENABLED
 
@@ -28,29 +27,37 @@ AP_OpenMV openmv{};
 // } static guided_angle_state;
 
 // init - initialise guided controller
+
 bool ModeOpenmvRTL::init(bool ignore_checks)
 {
-    gcs().send_text(MAV_SEVERITY_INFO, "OPENMV_RTL START");
-    temp_x = 2;
-    temp_y = 2;
+    path_num_ys = 0;
+
     // start in velaccel control mode
     generate_path();
     pos_control_start();
 
-    rc().init();
-
+    gcs().send_text(MAV_SEVERITY_INFO, "[Serein_Y] OPENMV_RTL START\r\n");
     return true;
 }
 
 void ModeOpenmvRTL::generate_path()
 {
-    // float radius_cm = g2.openmv_rtl_cm;
+    float radius_cm = g2.ze_star_alt_cm;
 
     wp_nav->get_wp_stopping_point(path_ys[0]);
 
+    path_ys[1] = path_ys[0] + Vector3f(50.0f, 0, 50.0f) * radius_cm;
+    path_ys[2] = path_ys[0] + Vector3f(0, 0, -path_ys[0].z);
+    gcs().send_text(MAV_SEVERITY_INFO, "[Serein_Y] path_1: x=%.6f y=%.6f z=%.6f\r\n", 
+        path_ys[2].x, path_ys[2].y, path_ys[2].z);
+    gcs().send_text(MAV_SEVERITY_INFO, "[Serein_Y] path_1: x=%.6f y=%.6f z=%.6f\r\n", 
+        path_ys[0].z, path_ys[1].z, path_ys[2].z);
+
+
 }
 
-// initialise guided mode's position controller
+/* ---------------------Serein_Y Start-----------------------------------------*/
+
 void ModeOpenmvRTL::pos_control_start()
 {
     // initialise position controller
@@ -59,65 +66,77 @@ void ModeOpenmvRTL::pos_control_start()
     // initialise wpnav to stopping point
     wp_nav->set_wp_destination(path_ys[0], false);
 
-    // 保持当前的偏航角或PID参数
     auto_yaw.set_mode_to_default(false);
 
-    gcs().send_text(MAV_SEVERITY_INFO, "pos_control_start: x=%.2f y=%.2f z=%.2f\r\n", 
-                    path_ys[0].x, path_ys[0].y, path_ys[0].z);
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "[Serein_Y] pos_control_start!\r\n");
+}
+
+bool ModeOpenmvRTL::check_reaching_rtl_altitude_cm()
+{
+    Vector3f current_loc;
+    //int32_t rtl_height = copter.g.rtl_altitude;
+    int32_t rtl_height = 300;
+    wp_nav->get_wp_stopping_point(current_loc);
+
+    //gcs().send_text(MAV_SEVERITY_INFO, "[Serein_Y] rtl_altitude_cm: x=%.2f y=%.2f z=%.2f\r\n", 
+    //        current_loc.x, current_loc.y, current_loc.z);
+
+    return (current_loc.z <= rtl_height);
+    //return ((current_loc.z <= rtl_height) && return_to_home_start_ys())?true:false;
+    
+}
+
+bool ModeOpenmvRTL::return_to_home_start_ys()
+{
+    Location loc;
+    Location home_loc;
+
+    AP_AHRS &_ahrs = AP::ahrs();
+    //WITH_SEMAPHORE(_ahrs.get_semaphore());
+    
+    if (_ahrs.get_location(loc) && _ahrs.home_is_set())
+    {
+        home_loc = _ahrs.get_home();
+        home_loc.alt += 50;
+        gcs().send_text(MAV_SEVERITY_INFO, "[Serein_Y] home_loc_cm: x=%d y=%d z=%d\r\n", home_loc.alt, home_loc.lat, home_loc.lng);
+        // copter.mode_guided.set_destination(home_loc);
+
+        wp_nav->set_wp_destination(path_ys[2], false);
+        return wp_nav->reached_wp_destination();
+    }
+
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "[Serein_Y] Home not set! Entering RTL, x=%d y=%d z=%d\r\n", home_loc.alt, home_loc.lat, home_loc.lng);
+    copter.set_mode(Mode::Number::RTL, ModeReason::MISSION_END);
+    return false;
 }
 
 void ModeOpenmvRTL::run()
-{
-    if ((temp_x == 0) && (temp_y == 0))
+{   
+    if (wp_nav->reached_wp_destination())
     {
-        gcs().send_text(MAV_SEVERITY_INFO, "Draw star finished, now go into loiter mode");
-        copter.set_mode(Mode::Number::LOITER, ModeReason::MISSION_END);  // 切换到loiter模式,MISSION_END为切换原因：任务结束自动切换
-    }
-    else if (wp_nav->reached_wp_destination())                          // 到达某个端点    //wap_nav 航点导航点
-    {
-        hal.scheduler->delay(1000);
-        rc().read_input();
-        // gcs().send_text(MAV_SEVERITY_INFO, "temp_x: x=%d\r\n", (int)rc().channel(7)->get_radio_in());
-        // gcs().send_text(MAV_SEVERITY_INFO, "temp_y: x=%d\r\n", (int)rc().channel(5)->get_radio_in());
-        if ((int)rc().channel(7)->get_radio_in() >= 1750)
-        {
-            temp_x -= 1.0;
-        }
-        else if ((int)rc().channel(7)->get_radio_in() <= 1250)
-        {
-            temp_x += 1.0;
-        }
-        if ((int)rc().channel(5)->get_radio_in() >= 1750)
-        {
-
-            temp_y -= 1.0;
-        }
-        else if ((int)rc().channel(5)->get_radio_in() <= 1250)
-        {
-            temp_y += 1.0;
-        }
-        gcs().send_text(MAV_SEVERITY_INFO, "temp_x=%d temp_y=%d\r\n", temp_x, temp_y);
+        gcs().send_text(MAV_SEVERITY_INFO, "[Serein_Y] now go into Next pos: %d\r\n", path_num_ys);
             
-        // path_ys[4] = path_ys[0] + Vector3f(sinf(radians(18.0f)), -cosf(radians(18.0f)), 0) * radius_cm;
-        path_ys[1] = path_ys[0] + Vector3f(double(temp_x), double(temp_y), 0);
-
-        gcs().send_text(MAV_SEVERITY_INFO, "pos_control_state: x=%f y=%f z=%f\r\n", path_ys[0].x, path_ys[0].y, path_ys[0].z);
-
-        wp_nav->set_wp_destination(path_ys[1], false);  // 将下一个航点位置设置为导航控制模块的目标位置
+        if (path_num_ys < 2)
+        {
+            path_num_ys++;
+            wp_nav->set_wp_destination(path_ys[path_num_ys], false);
+        }
+        else
+        {
+            gcs().send_text(MAV_SEVERITY_INFO, "[Serein_Y] ERROR\r\n");
+            copter.set_mode(Mode::Number::LOITER, ModeReason::MISSION_END);
+        }
     }
-
-    pos_control_run();
+    if ((path_num_ys == 2) && check_reaching_rtl_altitude_cm())
+    {
+        gcs().send_text(MAV_SEVERITY_INFO, "[Serein_Y] Starting landing procedure\r\n");
+        copter.set_mode(Mode::Number::LAND, ModeReason::MISSION_END);
+    }
     
-    path_ys[0] = path_ys[1];
-
-
+    pos_control_run();
 }
 
-// return guided mode timeout in milliseconds. Only used for velocity, acceleration, angle control, and angular rates
-uint32_t ModeOpenmvRTL::get_timeout_ms() const
-{
-    return MAX(copter.g2.guided_timeout, 0.1) * 1000;
-}
+/* ---------------------Serein_Y end-----------------------------------------*/
 
 void ModeOpenmvRTL::pos_control_run()
 {

@@ -1146,7 +1146,7 @@ private:
     bool _paused;
 };
 
-/*===============================================================================================*/
+/* ------------------------------Serein_Y Start------------------------------ */
 
 class ModeDrawStar : public Mode {
 public:
@@ -1180,10 +1180,10 @@ private:
 
 };
 
-/*=============================================================================================================*/
+/* ------------------------------ Serein_Y end ------------------------------ */
 
 
-/*===============================================================================================*/
+/* ------------------------------Serein_Y Start------------------------------ */
 
 class ModeOpenmvRTL : public Mode {
     public:
@@ -1201,7 +1201,6 @@ class ModeOpenmvRTL : public Mode {
         bool allows_arming(AP_Arming::Method method) const override { return false; };// 不允许在此模式下解锁,等同于上面两行
         bool is_autopilot() const override { return true; }  // 此模式为自动飞行控制
         bool has_user_takeoff(bool must_navigate) const override { return false; }  // 不允许在此模式下直接起飞（必须是在空中切到此模式）
-        uint32_t get_timeout_ms() const;
     protected:
     
         const char *name() const override { return "OPENMV_RTL"; }
@@ -1209,15 +1208,18 @@ class ModeOpenmvRTL : public Mode {
     
     private:
         Vector3f path_ys[10];  // 航点数组
-        int8_t temp_x =0, temp_y = 0;
+        int path_num_ys;
 
         void generate_path();  // 生成航线
         void pos_control_start();  // 开始位置控制
         void pos_control_run();  // 位置控制周期调用函数
     
+        bool check_reaching_rtl_altitude_cm();
+        bool return_to_home_start_ys();
+
     };
     
-/*=============================================================================================================*/
+/* ------------------------------ Serein_Y end ------------------------------ */
 
 class ModeGuidedNoGPS : public ModeGuided {
 

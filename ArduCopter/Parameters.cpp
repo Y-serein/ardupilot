@@ -1250,9 +1250,9 @@ const AP_Param::GroupInfo ParametersG2::var_info2[] = {
     AP_GROUPINFO("FS_EKF_FILT", 8, ParametersG2, fs_ekf_filt_hz, FS_EKF_FILT_DEFAULT),
 
     // ID 62 is reserved for the AP_SUBGROUPEXTENSION
-    AP_GROUPINFO("STAR_R_CM", 10, ParametersG2, star_radius_cm, 1000.0f),
+    AP_GROUPINFO("STAR_R_CM", 14, ParametersG2, star_radius_cm, 1000.0f),
     AP_GROUPINFO("STAR_YS_CM", 12, ParametersG2, star_ys_cm, 1000.0f),
-    AP_GROUPINFO("OPENMV_RTL_YS", 14, ParametersG2, openmv_rtl_cm, 1000.0f),
+    AP_GROUPINFO("ZE_STAR_ALT_CM", 10, ParametersG2, ze_star_alt_cm, 100.0f),
 
 
     AP_GROUPEND
